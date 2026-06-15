@@ -2,18 +2,14 @@ import { render, remove, RenderPosition } from '../framework/render.js';
 import EditPoint from '../view/edit-point.js';
 import { EventType, UserAction, UpdateType } from '../const.js';
 
-function createDefaultPoint(destinations) {
-  const dateFrom = new Date();
-  const dateTo = new Date(dateFrom);
-  dateTo.setHours(dateTo.getHours() + 1);
-
+function createDefaultPoint() {
   return {
     id: `point-${Date.now()}`,
     type: EventType.FLIGHT,
-    destinationId: destinations[0]?.id ?? '',
+    destinationId: '',
     offerIds: [],
-    dateFrom: dateFrom.toISOString(),
-    dateTo: dateTo.toISOString(),
+    dateFrom: '',
+    dateTo: '',
     basePrice: 0,
     isFavorite: false,
   };
@@ -26,6 +22,7 @@ export default class NewPointPresenter {
   #handleDataChange = null;
   #handleDestroy = null;
   #newPointComponent = null;
+  #isSaving = false;
 
   constructor({ pointListContainer, destinations, offers, onDataChange, onDestroy }) {
     this.#pointListContainer = pointListContainer;
@@ -41,7 +38,7 @@ export default class NewPointPresenter {
     }
 
     this.#newPointComponent = new EditPoint({
-      point: createDefaultPoint(this.#destinations),
+      point: createDefaultPoint(),
       destinations: this.#destinations,
       offers: this.#offers,
       isNew: true,
@@ -70,6 +67,8 @@ export default class NewPointPresenter {
   }
 
   #formSubmitHandler = (point) => {
+    this.#isSaving = true;
+
     this.#newPointComponent.updateData({
       isSaving: true,
     });
@@ -79,6 +78,7 @@ export default class NewPointPresenter {
       UpdateType.MINOR,
       point
     ).catch(() => {
+      this.#isSaving = false;
       this.#newPointComponent.updateData({
         isSaving: false,
       });
@@ -87,12 +87,21 @@ export default class NewPointPresenter {
   };
 
   #deleteClickHandler = () => {
+    if (this.#isSaving) {
+      return;
+    }
+
     this.destroy();
   };
 
   #escKeydownHandler = (evt) => {
     if (evt.key === 'Escape' || evt.key === 'Esc') {
       evt.preventDefault();
+
+      if (this.#isSaving) {
+        return;
+      }
+
       this.destroy();
     }
   };

@@ -4,7 +4,7 @@ import { sortPointsByDay } from './sort.js';
 const ROUTE_LIMIT = 3;
 
 function formatTripDate(date) {
-  return dayjs(date).format('DD MMM');
+  return dayjs(date).format('D MMM').toUpperCase();
 }
 
 function getTripTitle(points, destinations) {

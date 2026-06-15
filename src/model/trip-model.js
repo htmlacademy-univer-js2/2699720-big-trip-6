@@ -1,6 +1,8 @@
 import Observable from '../framework/observable.js';
 import { UpdateType } from '../const.js';
 
+const MIN_LOADING_TIME = 100;
+
 export default class TripModel extends Observable {
   #tripApiService = null;
   #points = [];
@@ -40,6 +42,7 @@ export default class TripModel extends Observable {
         this.#tripApiService.points,
         this.#tripApiService.destinations,
         this.#tripApiService.offers,
+        new Promise((resolve) => setTimeout(resolve, MIN_LOADING_TIME)),
       ]);
 
       this.#points = points;

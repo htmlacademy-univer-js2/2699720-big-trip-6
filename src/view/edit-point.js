@@ -186,9 +186,9 @@ export default class EditPoint extends AbstractStatefulView {
             </div>
 
             <button class="event__save-btn  btn  btn--blue" type="submit"${isDisabled ? ' disabled' : ''}>${saveLabel}</button>
-            <button class="event__reset-btn" type="reset"${isDisabled ? ' disabled' : ''}>${resetLabel}</button>
+            <button class="event__reset-btn" type="reset">${resetLabel}</button>
             ${!this.#isNew ? `
-            <button class="event__rollup-btn" type="button"${isDisabled ? ' disabled' : ''}>
+            <button class="event__rollup-btn" type="button">
               <span class="visually-hidden">Open event</span>
             </button>` : ''}
           </header>
@@ -225,6 +225,12 @@ export default class EditPoint extends AbstractStatefulView {
     this.updateElement(update);
   }
 
+  reset(point) {
+    this.#destroyDatePickers();
+    this._state = EditPoint.parsePointToState(point);
+    this.updateElement(this._state);
+  }
+
   _restoreHandlers() {
     this.setFormSubmitHandler(this.#handleFormSubmit);
     this.setRollupClickHandler(this.#handleRollupClick);
@@ -248,6 +254,10 @@ export default class EditPoint extends AbstractStatefulView {
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
 
+    if (this.#isDisabled()) {
+      return;
+    }
+
     if (!this.#isValid()) {
       return;
     }
@@ -258,11 +268,21 @@ export default class EditPoint extends AbstractStatefulView {
 
   #rollupClickHandler = (evt) => {
     evt.preventDefault();
+
+    if (this.#isDisabled()) {
+      return;
+    }
+
     this.#handleRollupClick();
   };
 
   #deleteClickHandler = (evt) => {
     evt.preventDefault();
+
+    if (this.#isDisabled()) {
+      return;
+    }
+
     this.#destroyDatePickers();
     this.#handleDeleteClick(EditPoint.parseStateToPoint(this._state));
   };
@@ -402,5 +422,9 @@ export default class EditPoint extends AbstractStatefulView {
     const selectedDestination = this.#destinations.find(({ name }) => name === destinationInput.value);
 
     return Boolean(selectedDestination && this._state.dateFrom && this._state.dateTo && this._state.basePrice !== '');
+  }
+
+  #isDisabled() {
+    return this._state.isSaving || this._state.isDeleting;
   }
 }

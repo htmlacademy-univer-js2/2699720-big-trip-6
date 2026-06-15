@@ -27,6 +27,7 @@ export default class TripPresenter {
   #loadingComponent = new Loading();
   #failedLoadComponent = new FailedLoad();
   #currentSortType = SortType.DAY;
+  #isActionInProgress = false;
 
   constructor({ tripMainContainer, tripEventsContainer, tripModel, filterModel, onNewPointDestroy }) {
     this.#tripMainContainer = tripMainContainer;
@@ -50,6 +51,10 @@ export default class TripPresenter {
   }
 
   createPoint() {
+    if (this.#isActionInProgress) {
+      return;
+    }
+
     if (this.#newPointPresenter !== null) {
       return;
     }
@@ -158,18 +163,30 @@ export default class TripPresenter {
   }
 
   #handleViewAction = (actionType, updateType, update) => {
+    this.#isActionInProgress = true;
+
     switch (actionType) {
       case UserAction.UPDATE_POINT:
-        return this.#tripModel.updatePoint(updateType, update);
+        return this.#tripModel.updatePoint(updateType, update)
+          .finally(() => {
+            this.#isActionInProgress = false;
+          });
       case UserAction.ADD_POINT:
         return this.#tripModel.addPoint(updateType, update)
           .then(() => {
             this.#handleNewPointDestroy();
+          })
+          .finally(() => {
+            this.#isActionInProgress = false;
           });
       case UserAction.DELETE_POINT:
-        return this.#tripModel.deletePoint(updateType, update);
+        return this.#tripModel.deletePoint(updateType, update)
+          .finally(() => {
+            this.#isActionInProgress = false;
+          });
     }
 
+    this.#isActionInProgress = false;
     return Promise.resolve();
   };
 
@@ -198,9 +215,15 @@ export default class TripPresenter {
   };
 
   #handleModeChange = () => {
+    if (this.#isActionInProgress) {
+      return false;
+    }
+
     this.#newPointPresenter?.destroy();
     this.#newPointPresenter = null;
     this.#pointPresenter.forEach((presenter) => presenter.resetView());
+
+    return true;
   };
 
   #handleNewPointFormClose = () => {
